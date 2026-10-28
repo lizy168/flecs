@@ -3003,6 +3003,10 @@ int flecs_id_qsort_cmp(
 char* flecs_load_from_file(
     const char *filename);
 
+bool flecs_strstr_i(
+    const char *str,
+    const char *match);
+
 /* Test whether entity name is an entity id (starts with a #). */
 bool flecs_name_is_id(
     const char *name);
@@ -12183,6 +12187,30 @@ char* flecs_asprintf(
     return result;
 }
 
+bool flecs_strstr_i(
+    const char *str,
+    const char *match)
+{
+    if (!match[0]) {
+        return true;
+    }
+
+    for (; *str; str ++) {
+        const char *n = str, *m = match;
+        while (*n && *m && (tolower((unsigned char)*n) ==
+            tolower((unsigned char)*m)))
+        {
+            n ++;
+            m ++;
+        }
+        if (!*m) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 char* flecs_to_snake_case(const char *str) {
     int32_t upper_count = 0, len = 1;
     const char *ptr = str;
@@ -16617,6 +16645,15 @@ static size_t ecs_os_api_fread(void *ptr, size_t size, size_t count, FILE *file)
     return fread(ptr, size, count, file);
 }
 
+static size_t ecs_os_api_fwrite(
+    const void *ptr,
+    size_t size,
+    size_t count,
+    FILE *file)
+{
+    return fwrite(ptr, size, count, file);
+}
+
 char* ecs_os_strdup_(const char *str) {
     if (!str) {
         return NULL;
@@ -16728,6 +16765,7 @@ void ecs_os_set_api_defaults(void)
     ecs_os_api.fopen_ = ecs_os_api_fopen;
     ecs_os_api.fclose_ = ecs_os_api_fclose;
     ecs_os_api.fread_ = ecs_os_api_fread;
+    ecs_os_api.fwrite_ = ecs_os_api_fwrite;
 
     /* Time */
     ecs_os_api.get_time_ = ecs_os_gettime;
@@ -20424,6 +20462,14 @@ void ecs_log_start_capture(bool try) {
 char* ecs_log_stop_capture(void) {
     return NULL;
 }
+
+void ecs_log_start_collect_errors(
+    ecs_vec_t *errors)
+{
+    (void)errors;
+}
+
+void ecs_log_stop_collect_errors(void) { }
 
 void flecs_log_capture_push(bool try) {
     (void)try;
@@ -29194,11 +29240,6 @@ static void flecs_table_init_flags(
             } else if (r == ecs_id(EcsPoly)) {
                 table->flags |= EcsTableHasModule;
             }
-#if defined(FLECS_DEBUG_INFO) && defined(FLECS_DOC)
-            else if (id == ecs_pair_t(EcsDocDescription, EcsName)) {
-                table->_->doc_name_column = flecs_ito(int16_t, i);
-            }
-#endif
         } else {
             if (ECS_HAS_ID_FLAG(id, TOGGLE)) {
                 ecs_table__t *meta = table->_;
@@ -33897,9 +33938,6 @@ yield:
 static void flecs_query_iter_fini(
     ecs_iter_t *it)
 {
-#if defined(FLECS_CACHED_QUERIES) || defined(FLECS_QUERY_PLANS)
-    ecs_query_iter_t *qit = &it->priv_.iter.query;
-#endif
     const ecs_query_t *q = it->query;
     (void)q;
     ecs_assert(q != NULL, ECS_INTERNAL_ERROR, NULL);
@@ -33923,9 +33961,6 @@ ecs_iter_t flecs_query_iter(
 #endif
 
     flecs_poly_assert(q, ecs_query_t);
-#if defined(FLECS_CACHED_QUERIES) || defined(FLECS_QUERY_PLANS)
-    ecs_query_impl_t *impl = flecs_query_impl(q);
-#endif
 
     it.stage = ECS_CONST_CAST(ecs_world_t*, world);
 
