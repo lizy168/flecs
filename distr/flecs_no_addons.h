@@ -265,8 +265,8 @@
 #ifdef FLECS_NO_SCRIPT_PLATFORM
 #undef FLECS_SCRIPT_PLATFORM
 #endif
-#ifdef FLECS_NO_SCRIPT_EVENT
-#undef FLECS_SCRIPT_EVENT
+#ifdef FLECS_NO_SCRIPT_INPUT
+#undef FLECS_SCRIPT_INPUT
 #endif
 #ifdef FLECS_NO_SCRIPT_COMMAND
 #undef FLECS_SCRIPT_COMMAND
@@ -325,8 +325,11 @@
  * the most dependencies to addons with the least dependencies. */
 
 #if defined(FLECS_SCRIPT_ASYNC) || defined(FLECS_SCRIPT_MATH) || \
-    defined(FLECS_SCRIPT_PLATFORM) || defined(FLECS_SCRIPT_EVENT) || \
+    defined(FLECS_SCRIPT_PLATFORM) || defined(FLECS_SCRIPT_INPUT) || \
     defined(FLECS_SCRIPT_COMMAND)
+#endif
+
+#if defined(FLECS_ALERTS) || defined(FLECS_APP) || defined(FLECS_TIMER)
 #endif
 
 #if defined(FLECS_DOC) || defined(FLECS_META) || defined(FLECS_SYSTEM) || \
@@ -337,6 +340,12 @@
     defined(FLECS_JSON) || defined(FLECS_METRICS) || defined(FLECS_PIPELINE) || \
     defined(FLECS_REST) || defined(FLECS_STATS) || defined(FLECS_SYSTEM) || \
     defined(FLECS_TIMER) || defined(FLECS_SCRIPT_COMMAND)
+#endif
+
+#if defined(FLECS_FRAME) || defined(FLECS_HTTP)
+#if !defined(FLECS_OS_API_IMPL) && !defined(FLECS_NO_OS_API_IMPL)
+#define FLECS_OS_API_IMPL
+#endif
 #endif
 
 #endif
